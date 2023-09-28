@@ -43,6 +43,38 @@ void gotoxy(int x, int y){
   SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
 
+// 1번 블록
+const int firstBlock[4][4][4] = {
+  {
+    {0,0,0,0},
+    {0,0,0,0},
+    {2,2,2,2},
+    {0,0,0,0}
+  },
+  {
+    {0,0,2,0},
+    {0,0,2,0},
+    {0,0,2,0},
+    {0,0,2,0}
+  },
+  {
+    {0,0,0,0},
+    {0,0,0,0},
+    {2,2,2,2},
+    {0,0,0,0},
+  },
+  {
+    {0,0,2,0},
+    {0,0,2,0},
+    {0,0,2,0},
+    {0,0,2,0}
+  }
+};
+
+// 2번 블록
+const int secondBlock[4][4][4] = {
+  
+}
 class MainMenu {
   public :
     MainMenu(){
