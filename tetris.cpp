@@ -217,6 +217,20 @@ class Block {
     void rotate(){
       rotationCount = (rotationCount + 1) % 4;
     }
+    // 23.10.01 소스추가 by QoneLee
+    void setX(int x) {
+      this->x = x;
+    }
+    void setY(int y){
+      this->y = y;
+    }
+    void setRotationCount(int r){
+      this-> rotationCount = r;
+    }
+    void setShape(int r, int y, int x, int value){
+      this->shape[r][y][x] = value;
+    }
+    // 23.10.01 소스추가 by QoneLee
 };
 
 //1번 블록 클래스
@@ -316,6 +330,30 @@ class MainMenu {
     }
 };
 
+// 23.10.01 소스추가 by QoneLee
+// 백업용 클래스
+class Backup{
+  public:
+    // 블록 백업
+    static void updateBlock(Block *source, Block &backupBlock){
+      backupBlock.setX(source->getX()); // 블록의 x좌표 백업
+      backupBlock.setY(source->getY()); // 블록의 y좌표 백업
+      backupBlock.setRotationCount(source->getRotationCount()); // 블록의 회전상태 변수 백업
+      for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++){
+          for(int k = 0; k < 4; k++){
+            backupBlock.setShape(i,j,k, source->getShape(i,j,k)); // 블록의 모양 백업
+          }
+        }
+      }
+    }
+    // 테이블 백업
+    static void updateTable(vector<vector<int> > &source, vector<vector<int> > &backupTable){
+      backupTable.resize(source.size(), vector<int>(source.size())); // 기존테이블의 크기만큼 2차원배열의 크기 지정
+      copy(source.begin(),source.end(),backupTable.begin()); // 기존테이블 vector를 backupTable vector에 백업
+    }
+};
+
 // 테트리스 게임테이블 크래스
 class GameTable{
   private:
@@ -349,6 +387,13 @@ class GameTable{
         table[i][0] = 1;
         table[i][x-1] = 1;
       }
+
+      // 23.10.01 소스추가 by QoneLee
+      // 맨 밑바닥 감지용
+      for(int i = 0; i < x -1; i++){
+        table[y-1][i] = 4; // 맨 밑에를 4로 지정
+      }
+      // 23.10.01 소스추가 by QoneLee
     }
     
     // 게임판 그리는 함수
@@ -396,6 +441,14 @@ class GameTable{
 
     //블록 이동
     void moveBlock(){
+      // 23.10.01 소스추가 by QoneLee
+      // 백업
+      Block backupBlock; // 백업용 블록 객체
+      vector<vector<int> > backupTable; // 백업용 테이블 객체
+      backup::updateBlock(blockObject, backupBlock); // block backup
+      backup::updateTable(table, backupTable); // table backup
+      // 23.10.01 소스추가 by QoneLee
+
       // 테이블에서 블록지우기
       for(int i = 0; i < 4; i++){
         for(int j = 0; j < 4; j++){
@@ -421,16 +474,51 @@ class GameTable{
         for(int j = 0; j < 4; j++){
           int Y = j + blockObject->getY();
           int X = i + blockObject->getX();
-          if(table[Y][X] == 0){
-            table[Y][X] = blockObject->getShape(blockObject->getRotationCount(), i, j);
+          // 23.10.01 소스추가 by QoneLee
+          int blockValue = blockObject->getShape(blockObject->getRotationCount(),i,j); // 블록의 배열값 얻기
+          if( blockValue != 2) continue; // 블록이 아니면 무시
+          if( table[Y][X] == 0) { // 빈공간이면 갱신
+            table[Y][X] = blockValue; 
+          } else if( table[Y][X] ==1 ) { // 블록이 양옆에 닿으면 취소
+            copy(backupTable.begin(), backupTable.end(), table.begin()); // table 백업
+            blockObject->setX(backupBlock.getX()); // 블록 x좌표 백업
+            blockObject->setY(backupBlock.getY()); // 블록 y좌표 백업
+            return;
+          } else if( table[Y][X] == 3 ) { // 이미 쌓여진 블록과 접촉시 
+            copy(backupTable.begin(), backupTable.end(), table.begin());
+            blockObject->setX(backupBlock.getX());
+            blockObject->setY(backupBlock.getY());
+            if( key == DOWN){ // 키가 아랫방향일 경우 블록을 쌓고 새로운 블록을 만듦
+              buildBlock();
+              createBlock();
+            }
+            return;
+          } else if( table[Y][X] == 4) { // 맨 밑바닥과 접촉시 
+            copy(backupTable.begin(), backupTable.end(), table.begin());
+            blockObject->setX(backupBlock.getX());
+            blockObject->setY(backupBlock.getY());
+            if( key == DOWN){ // 키가 아랫방향일 경우 블록을 쌓고 새로운 블록을 만듦
+              buildBlock();
+              createBlock();
+            }
+            return;
           }
+          // if(table[Y][X] == 0){
+          //   table[Y][X] = blockObject->getShape(blockObject->getRotationCount(), i, j);
+          // }
         }
       }
     }
 
     // 블록 회전
     void rotateBlock(){
-      blockObject->rotate();
+      // 23.10.01 소스추가 by QoneLee
+      // 백업
+      Block backupBlock;
+      vector<vector<int> > backupTable;
+      backup::updateBlock(blockObject, backupBlock); // block backup
+      backup::updateTable(table, backupTable); // table backup
+      // 23.10.01 소스추가 by QoneLee
       // 테이블에서 블록지우기
       for(int i = 0; i < 4; i++){
         for(int j = 0; j < 4; j++){
@@ -442,18 +530,43 @@ class GameTable{
         }
       }
 
+      blockObject->rotate(); // 블록을 회전
+      
       //블록상태 테이블에 갱신
       for(int i = 0; i < 4; i++){
         for(int j = 0; j < 4; j++){
           int Y = j + blockObject->getY();
           int X = i + blockObject->getX();
+          //23. 10.01 소스추가 by QoneLee
+          int blockValue = blockObject->getShape(blockObject->getRotationCount(), i, j); // 블록 배열값
+          if( table[Y][X] != 2) continue; // 블록이 아니면 무시
           if(table[Y][X] == 0){
             table[Y][X] = blockObject->getShape(blockObject->getRotationCount(), i, j);
+          } else if( table[Y][X] == 1 || table[Y][X] == 3 || table[Y][X] == 4) {
+            copy(backupTable.begin(), backupTable.end(), table.begin());
+            blockObject->setRotationCount(backupBlock.getRotationCount());
+            return;
           }
+          // 23.10.01 소스추가 by QoneLee
         }
       }
     }
     // 23.09.30 소스추가 by QoneLee
+
+    // 23.10.01 소스추가 by QoneLee
+    // 블록 쌓기
+    void buildBlock(){
+      for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++){
+          int Y = j + blockObject->getY();
+          int X = i + blockObject->getX();
+          int blockValue = blockObject->getShape(blockObject->getRotationCount(), i ,j);
+          if( table[Y][X] != 2) continue;
+          table[Y][X] = 3;
+        }
+      }
+    }
+    // 23. 10.01 소스추가 by QoneLee
 };
 
 // 23.09.30 소스추가 by QoneLee
