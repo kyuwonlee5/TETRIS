@@ -578,7 +578,7 @@ class GameTable{
     }
     // 23. 10.01 소스추가 by QoneLee
 
-    // space 바 누를시에 바로 떨어지는 함수
+// space 바 누를시에 바로 떨어지는 함수
 void HardDropBlock(){
   for(int i = 0; i < 4; i++) {
     for(int j = 0; j < 4; j++){
