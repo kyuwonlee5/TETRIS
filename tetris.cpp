@@ -11,9 +11,13 @@
 #include <cstdlib>
 #include <ctime>
 /* 23.09.28 소스추가*/
+#include <algorithm>
 
 using namespace std;
 
+const int END_Y = 6;   // 게임 종료선 
+const int TABLE_X = 15; // 테트리스 판 x축 길이
+const int TABLE_Y = 38; // 테트리스 판 y축 길이
 const int WIDTH = 20; // 가로 
 const int HEIGHT = 30; // 세로
 // 23.09.28 소스 추가 by Qone
@@ -22,6 +26,7 @@ const int RIGHT = 77; // →
 const int UP = 72; // ↑
 const int DOWN = 80; // ↓
 // 23.09.28 소스 추가 by Qone
+const int SPACE = 32; // space
 
 // 23.09.28 소스 추가 by Qone
 // 커서 숨기기 = 0 / 보이기 = 1
@@ -231,6 +236,10 @@ class Block {
       this->shape[r][y][x] = value;
     }
     // 23.10.01 소스추가 by QoneLee
+
+    void up(){ // hard drop 처리용으로 블록 한칸 위로 이동
+      y--;
+    }
 };
 
 //1번 블록 클래스
@@ -327,6 +336,7 @@ class MainMenu {
       cout << "\t\t"; cout << "                게임을 시작하려면 아무키나 누르세요.\n\n\n\n\n\n\n";
       cout << "\t\t"; cout << "                   TetrisGame1.0 By QoneLee\n";
       getchar(); // 사용자가 입력한 char를 아스키코드값으로 받아오는 함수
+      system("cls");
     }
 };
 
@@ -367,7 +377,7 @@ class GameTable{
     GameTable(int x, int y){ // 게임판 뼈대
     // 23.09.30 소스추가 by QoneLee
       blockObject = nullptr;
-    // 23.09.30 소스추가 by QoneLee
+    // 23.09.30 소스추가 by QoneLee 
       this -> x = x;
       this -> y = y;
       for(int i = 0; i < y; i++){
@@ -567,7 +577,87 @@ class GameTable{
       }
     }
     // 23. 10.01 소스추가 by QoneLee
+
+    // space 바 누를시에 바로 떨어지는 함수
+void HardDropBlock(){
+  for(int i = 0; i < 4; i++) {
+    for(int j = 0; j < 4; j++){
+      int Y = j + blockObject->getY();
+      int X = i + blockObject->getX();
+
+      if(Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) {
+        continue;
+      }
+
+      if(table[Y][X] == 2) { // 만약에 블럭이면
+        table[Y][X] = 0 ; // 테이블에서 삭제
+      }
+    }
+  }
+
+  while (true) //  바닥이나 블록을 만날때까지 진행
+  {
+    for(int i = 0; i < 4; i++){
+      for(int j = 0; j < 4; j++){
+        int Y = j + blockObject->getY();
+        int X = i + blockObject->getX();
+
+        if(Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) {
+          continue;
+        }
+
+        int blockValue = blockObject->getShape(blockObject->getRotationCount(),i,j); // 블록의 배열값 얻기
+        if(blockValue != 2) {
+          continue;
+        }
+
+        if(table[Y][X] == 3 || table[Y][X] == 4) { // 블록이나 벽을 만나면
+          blockObject->up(); // 한칸 위로
+          BuildBlock();     // 블록 쌓기
+          createBlock();    // 새로운 블록을 생성
+          return;
+        }
+
+      }
+    }
+
+    blockObject->down();
+  }
+}
+
+// 일직선 삭제
+void DeleteLinear(){
+  for(int Y = END_Y + 1; Y < TABLE_Y - 1; Y++) {
+    bool isLinear = true;
+    for(int X = 1; X < TABLE_X - 1; X++){
+      if(table[Y][X] != 3) {
+        isLinear = false;
+      }
+    }
+    if(isLinear) {
+      for(int i = Y; i > END_Y - 1; i--){
+        for(int j = 1; j < TABLE_X - 1; j++){
+          table[i][j] = table[i-1][j];
+        }
+      }
+    }
+
+  }
+}
+
+// 쌓은 블록이 게임 종료 선에 닿았는지 체크
+bool isReachEnding(){
+  for(int X = 1; X < TABLE_X - 1; X++){
+    if(table[END_Y][X] == 3) {
+      return true;
+    }
+  }
+  return false;
+}
+
 };
+
+
 
 // 23.09.30 소스추가 by QoneLee
 // 게임 시작 클래스
